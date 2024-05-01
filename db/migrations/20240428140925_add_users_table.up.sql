@@ -1,8 +1,8 @@
-create table users
+CREATE TABLE users
 (
-    id            uuid primary key,
-    created_at    timestamptz default now(),
-    username      text not null check ( char_length(username) >= 1 AND char_length(username) <= 32),
-    password_hash text not null,
-    unique (username)
-);
+    id UUID NOT NULL PRIMARY KEY,
+    created_at timestamptz default now(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name TEXT NOT NULL check ( char_length(name) >= 5 AND char_length(name) <= 50),
+    password_hash TEXT NOT NULL check ( char_length(name) >= 5 AND char_length(name) <= 15)
+)
