@@ -57,6 +57,13 @@ func (m *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	errEmail := utils.ValidateEmail(input.Email)
+	errPassword := utils.ValidatePassword(input.Password)
+	if !errEmail || !errPassword {
+		c.JSON(400, gin.H{"status": "failed", "msg": "email:not null, should be in email format, password:not null, minLength 5, maxLength 15"})
+		return
+	}
+
 	repository := repository.NewAuthRepository(DB)
 	check := repository.Login(input)
 
