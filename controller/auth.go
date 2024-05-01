@@ -5,6 +5,7 @@ import (
 
 	"github.com/Adekabang/social-cat/model"
 	"github.com/Adekabang/social-cat/repository"
+	"github.com/Adekabang/social-cat/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,15 +21,19 @@ func (m *AuthController) Register(c *gin.Context) {
 	DB := m.Db
 	var user model.RegisterUser
 
-	// if err := c.ShouldBindJSON(&user); err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	// 	return
-	// }
-
 	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(400, gin.H{"status": "failed", "msg": err})
 		return
 	}
+
+	errEmail := utils.ValidateEmail(user.Email)
+	errName := utils.ValidateName(user.Name)
+	errPassword := utils.ValidatePassword(user.Password)
+	if !errEmail || !errName || !errPassword {
+		c.JSON(400, gin.H{"status": "failed", "msg": "email:not null, can't be duplicate email, should be in email format, name:not null, minLength 5, maxLength 50, name can be duplicate with others, password:not null, minLength 5, maxLength 15"})
+		return
+	}
+
 	repository := repository.NewAuthRepository(DB)
 	insert := repository.Register(user)
 
