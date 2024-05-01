@@ -18,13 +18,14 @@ func NewAuthRepository(db *sql.DB) AuthRepositoryInterface {
 	return &AuthRepository{Db: db}
 }
 
-func (m *AuthRepository) Register(user model.RegisterUser) string {
-
+func (m *AuthRepository) Register(user model.RegisterUser) model.ResponseMessage {
+	var response model.ResponseMessage
 	hashedPassword, err := utils.HashPassword(user.Password)
 
 	if err != nil {
 		log.Println(err.Error())
-		return "failed hashing"
+		response = model.ResponseMessage{Status: "failed", Msg: "failed hashing"}
+		return response
 	}
 
 	uuidUser := uuid.New()
@@ -32,7 +33,8 @@ func (m *AuthRepository) Register(user model.RegisterUser) string {
 	stmt, err := m.Db.Prepare("INSERT INTO users(id, email, name, password_hash) VALUES ($1,$2,$3,$4)")
 	if err != nil {
 		log.Println(err)
-		return "server failed"
+		response = model.ResponseMessage{Status: "failed", Msg: "server failed"}
+		return response
 	}
 	defer stmt.Close()
 
@@ -40,9 +42,18 @@ func (m *AuthRepository) Register(user model.RegisterUser) string {
 	if err2 != nil {
 		log.Println(err2)
 		log.Println(string(err2.(*pq.Error).Code))
-		return string(err2.(*pq.Error).Code)
+		response = model.ResponseMessage{Status: "failed", Msg: string(err2.(*pq.Error).Code)}
+		return response
 	}
-	return "success"
+
+	token, err := utils.GenerateToken(uuidUser.String())
+
+	if err != nil {
+		log.Println(err)
+		response = model.ResponseMessage{Status: "failed", Msg: "error"}
+	}
+	response = model.ResponseMessage{Status: "success", Msg: token, Data: model.UserData{Email: user.Email, Name: user.Name}}
+	return response
 }
 
 func (m *AuthRepository) Login(input model.LoginUser) model.ResponseMessage {
@@ -75,7 +86,7 @@ func (m *AuthRepository) Login(input model.LoginUser) model.ResponseMessage {
 					log.Println(err)
 					response = model.ResponseMessage{Status: "failed", Msg: "error"}
 				}
-				response = model.ResponseMessage{Status: "success", Msg: token}
+				response = model.ResponseMessage{Status: "success", Msg: token, Data: model.UserData{Email: email, Name: name}}
 			}
 
 		}

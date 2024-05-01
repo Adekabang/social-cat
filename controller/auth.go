@@ -37,10 +37,11 @@ func (m *AuthController) Register(c *gin.Context) {
 	repository := repository.NewAuthRepository(DB)
 	insert := repository.Register(user)
 
-	if insert == "success" {
-		c.JSON(201, gin.H{"status": "success", "msg": "User Registered"})
+	if insert.Status == "success" {
+		c.JSON(200, gin.H{"message": "User registered successfully", "data": gin.H{"email": insert.Data.Email, "name": insert.Data.Name, "accessToken": insert.Msg}})
+
 		return
-	} else if insert == "23505" {
+	} else if insert.Msg == "23505" {
 		c.JSON(409, gin.H{"status": "failed", "msg": "User Already Registered"})
 		return
 	} else {
@@ -68,7 +69,7 @@ func (m *AuthController) Login(c *gin.Context) {
 	check := repository.Login(input)
 
 	if check.Status == "success" {
-		c.JSON(200, gin.H{"status": "success", "msg": "User Logon", "accessToken": check.Msg})
+		c.JSON(200, gin.H{"message": "User logged successfully", "data": gin.H{"email": check.Data.Email, "name": check.Data.Name, "accessToken": check.Msg}})
 		return
 	} else if check.Msg == "user not found" {
 		c.JSON(404, gin.H{"status": "failed", "msg": "username not found."})

@@ -34,7 +34,12 @@ type LoginUser struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type UserData struct {
+	Email string
+	Name  string
+}
 type ResponseMessage struct {
-	Status string `json:"status"`
-	Msg    string `json:"msg"`
+	Status string   `json:"status"`
+	Data   UserData `json:"data"`
+	Msg    string   `json:"msg"`
 }
