@@ -38,7 +38,7 @@ func (m *AuthController) Register(c *gin.Context) {
 	insert := repository.Register(user)
 
 	if insert == "success" {
-		c.JSON(200, gin.H{"status": "success", "msg": "User Registered"})
+		c.JSON(201, gin.H{"status": "success", "msg": "User Registered"})
 		return
 	} else if insert == "23505" {
 		c.JSON(409, gin.H{"status": "failed", "msg": "User Already Registered"})
