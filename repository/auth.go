@@ -44,3 +44,42 @@ func (m *AuthRepository) Register(user model.RegisterUser) string {
 	}
 	return "success"
 }
+
+func (m *AuthRepository) Login(input model.LoginUser) model.ResponseMessage {
+	var response model.ResponseMessage
+	query, err := m.Db.Query("SELECT * FROM users WHERE email = $1", input.Email)
+	if err != nil {
+		log.Println(err)
+		response = model.ResponseMessage{Status: "failed", Msg: "user not found"}
+	}
+	if query != nil {
+		for query.Next() {
+			var (
+				id            string
+				created_at    string
+				email         string
+				name          string
+				password_hash string
+			)
+			err := query.Scan(&id, &created_at, &email, &name, &password_hash)
+			if err != nil {
+				log.Println(err)
+			}
+			err2 := utils.VerifyPassword(input.Password, password_hash)
+			if err2 != nil {
+				log.Println(err2)
+				response = model.ResponseMessage{Status: "failed", Msg: "wrong password"}
+			} else {
+				token, err := utils.GenerateToken(id)
+				if err != nil {
+					log.Println(err)
+					response = model.ResponseMessage{Status: "failed", Msg: "error"}
+				}
+				response = model.ResponseMessage{Status: "success", Msg: token}
+			}
+
+		}
+	}
+
+	return response
+}

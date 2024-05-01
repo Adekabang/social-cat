@@ -6,6 +6,7 @@ import (
 	auth "github.com/Adekabang/social-cat/controller"
 	user "github.com/Adekabang/social-cat/controller"
 	"github.com/Adekabang/social-cat/db"
+	"github.com/Adekabang/social-cat/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,11 @@ func (a *App) Routes() {
 	controllerAuth := auth.NewAuthController(a.DB)
 	public := r.Group("/v1/user")
 	public.POST("/register", controllerAuth.Register)
+	public.POST("/login", controllerAuth.Login)
+
+	protected := r.Group("/admin")
+	protected.Use(middleware.JwtAuthMiddleware())
+	protected.GET("/user", controller.GetAllUsers)
 
 	a.Router = r
 }

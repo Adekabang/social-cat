@@ -28,3 +28,13 @@ type RegisterUser struct {
 	Name     string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
+
+type LoginUser struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type ResponseMessage struct {
+	Status string `json:"status"`
+	Msg    string `json:"msg"`
+}

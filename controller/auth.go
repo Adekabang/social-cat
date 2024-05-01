@@ -43,3 +43,29 @@ func (m *AuthController) Register(c *gin.Context) {
 		return
 	}
 }
+func (m *AuthController) Login(c *gin.Context) {
+	DB := m.Db
+	var input model.LoginUser
+
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(400, gin.H{"status": "failed", "msg": err})
+		return
+	}
+
+	repository := repository.NewAuthRepository(DB)
+	check := repository.Login(input)
+
+	if check.Status == "success" {
+		c.JSON(200, gin.H{"status": "success", "msg": "User Logon", "accessToken": check.Msg})
+		return
+	} else if check.Msg == "user not found" {
+		c.JSON(404, gin.H{"status": "failed", "msg": "username not found."})
+		return
+	} else if check.Msg == "wrong password" {
+		c.JSON(400, gin.H{"status": "failed", "msg": "wrong password."})
+		return
+	} else {
+		c.JSON(500, gin.H{"status": "failed", "msg": "server error"})
+		return
+	}
+}
