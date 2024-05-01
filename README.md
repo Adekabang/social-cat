@@ -1,3 +1,8 @@
+## Migrate
+```sh
+migrate -database "postgres://postgres:password@127.0.0.1:5432/social_cat?sslmode=disable" -path db/migrations up
+```
+
 # Requirement:
 - [x]  Authentication & Authorization
     - [x]  POST /v1/user/register
