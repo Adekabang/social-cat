@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/Adekabang/social-cat/model"
@@ -49,7 +48,6 @@ func (m *UserRepository) GetAllUsers() []model.GetUser {
 			if err != nil {
 				log.Println(err)
 			}
-			fmt.Println(err)
 			user := model.GetUser{Id: id, Email: email, Name: name}
 			users = append(users, user)
 		}

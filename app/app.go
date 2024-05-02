@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	auth "github.com/Adekabang/social-cat/controller"
+	cat "github.com/Adekabang/social-cat/controller"
 	user "github.com/Adekabang/social-cat/controller"
 	"github.com/Adekabang/social-cat/db"
 	"github.com/Adekabang/social-cat/middleware"
@@ -37,6 +38,11 @@ func (a *App) Routes() {
 	protected := r.Group("/admin")
 	protected.Use(middleware.JwtAuthMiddleware())
 	protected.GET("/user", controller.GetAllUsers)
+
+	controllerCat := cat.NewCatController(a.DB)
+	publicCat := r.Group("/v1/cat")
+	publicCat.POST("/", controllerCat.InsertCat)
+	publicCat.GET("/", controllerCat.GetAllCats)
 
 	a.Router = r
 }
