@@ -43,6 +43,8 @@ func (a *App) Routes() {
 	publicCat := r.Group("/v1/cat")
 	publicCat.POST("/", controllerCat.InsertCat)
 	publicCat.GET("/", controllerCat.GetAllCats)
+	publicCat.PUT("/:id", controllerCat.UpdateCat)
+	publicCat.DELETE("/:id", controllerCat.DeleteCat)
 
 	a.Router = r
 }

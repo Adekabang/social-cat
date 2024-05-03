@@ -125,6 +125,43 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 	return cats
 }
 
+// GetOneCat implements CatRepositoryInterface
+func (m *CatRepository) GetOneCat(id string) bool {
+	query, err := m.Db.Query("SELECT * FROM cats WHERE id = $1", id)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	if query != nil {
+		for query.Next() {
+			var (
+				id            string
+				name          string
+				race          string
+				sex           string
+				ageInMonth    int
+				description   string
+				imageUrlsJSON string
+				createdAt     string
+			)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &imageUrlsJSON, &createdAt)
+
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+
+			if id != "" {
+				return true
+			}
+
+		}
+	} else {
+		return false
+	}
+	return false
+}
+
 // InsertCat implements CatRepositoryInterface
 func (m *CatRepository) InsertCat(post model.PostCat) bool {
 
@@ -140,6 +177,29 @@ func (m *CatRepository) InsertCat(post model.PostCat) bool {
 	_, err2 := stmt.Exec(uuidCat, post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls))
 	if err2 != nil {
 		log.Println(err2)
+		return false
+	}
+	return true
+}
+
+// UpdateCat implements CatRepositoryInterface
+func (m *CatRepository) UpdateCat(id string, post model.PostCat) bool {
+
+	_, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6 WHERE id = $7", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	getCat := m.GetOneCat(id)
+	return getCat
+}
+
+// DeleteCat implements CatRepositoryInterface
+func (m *CatRepository) DeleteCat(id string) bool {
+	_, err := m.Db.Exec("DELETE FROM cats WHERE id = $1", id)
+	if err != nil {
+		log.Println(err)
 		return false
 	}
 	return true

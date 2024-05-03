@@ -31,3 +31,7 @@ type GetCat struct {
 	Owned      bool   `json:"owned"`
 	Search     string `json:"search"`
 }
+
+type CatUri struct {
+	ID string `uri:"id" binding:"required"`
+}

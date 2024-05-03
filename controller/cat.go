@@ -124,3 +124,46 @@ func (m *CatController) InsertCat(c *gin.Context) {
 		return
 	}
 }
+
+// UpdateCat implements CatControllerInterface
+func (m *CatController) UpdateCat(c *gin.Context) {
+	DB := m.Db
+	var post model.PostCat
+	var uri model.CatUri
+	if err := c.ShouldBind(&post); err != nil {
+		c.JSON(400, gin.H{"status": "failed", "msg": err})
+		return
+	}
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.JSON(400, gin.H{"status": "failed", "msg": err})
+		return
+	}
+	repository := repository.NewCatRepository(DB)
+	update := repository.UpdateCat(uri.ID, post)
+	if update {
+		c.JSON(200, gin.H{"status": "success", "data": update, "msg": "update cat successfully"})
+		return
+	} else {
+		c.JSON(500, gin.H{"status": "failed", "data": nil, "msg": "update cat failed"})
+		return
+	}
+}
+
+// DeleteCat implements CatControllerInterface
+func (m *CatController) DeleteCat(c *gin.Context) {
+	DB := m.Db
+	var uri model.CatUri
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.JSON(400, gin.H{"status": "failed", "msg": err})
+		return
+	}
+	repository := repository.NewCatRepository(DB)
+	delete := repository.DeleteCat(uri.ID)
+	if delete {
+		c.JSON(200, gin.H{"status": "success", "msg": "delete cat successfully"})
+		return
+	} else {
+		c.JSON(500, gin.H{"status": "failed", "msg": "delete cat failed"})
+		return
+	}
+}
