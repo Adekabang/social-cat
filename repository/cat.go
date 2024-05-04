@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Adekabang/social-cat/model"
 	"github.com/google/uuid"
@@ -68,6 +69,10 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 		conditions = append(conditions, fmt.Sprintf("race = '%s'", cat.Race))
 	}
 
+	if cat.AgeInMonth != "" {
+		conditions = append(conditions, fmt.Sprintf(cat.AgeInMonth))
+	}
+
 	// Construct the WHERE clause
 	whereClause := ""
 	if len(conditions) > 0 {
@@ -88,6 +93,7 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 	}
 
 	// Execute the query
+	log.Println(query)
 	rows, err := m.Db.Query(query)
 	if err != nil {
 		log.Println(err)
@@ -105,11 +111,12 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 				sex           string
 				ageInMonth    int
 				description   string
+				hasMatched    bool
 				imageUrlsJSON string
 				createdAt     string
 			)
 
-			err := rows.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &imageUrlsJSON, &createdAt)
+			err := rows.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -117,8 +124,12 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 
 			// Parse the custom format into a slice of strings
 			imageUrls := parseCustomFormat(imageUrlsJSON)
+			createdAtFormated, err := time.Parse(time.RFC3339, createdAt)
+			if err != nil {
+				fmt.Println(err)
+			}
 
-			cat := model.Cat{Id: id, Name: name, Race: race, Sex: sex, AgeInMonth: int32(ageInMonth), Description: description, ImageUrls: imageUrls, CreatedAt: createdAt}
+			cat := model.Cat{Id: id, Name: name, Race: race, Sex: sex, AgeInMonth: int32(ageInMonth), Description: description, ImageUrls: imageUrls, HasMatched: hasMatched, CreatedAt: createdAtFormated.String()}
 			cats = append(cats, cat)
 		}
 	}
@@ -141,10 +152,11 @@ func (m *CatRepository) GetOneCat(id string) bool {
 				sex           string
 				ageInMonth    int
 				description   string
+				hasMatched    bool
 				imageUrlsJSON string
 				createdAt     string
 			)
-			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &imageUrlsJSON, &createdAt)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt)
 
 			if err != nil {
 				log.Println(err)
@@ -163,29 +175,62 @@ func (m *CatRepository) GetOneCat(id string) bool {
 }
 
 // InsertCat implements CatRepositoryInterface
-func (m *CatRepository) InsertCat(post model.PostCat) bool {
+func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 
 	uuidCat := uuid.New()
 
-	stmt, err := m.Db.Prepare("INSERT INTO cats(id, name, race, sex, ageInMonth, description, imageUrls) VALUES ($1,$2,$3,$4,$5,$6,$7)")
+	stmt, err := m.Db.Prepare("INSERT INTO cats(id, name, race, sex, ageInMonth, description, imageUrls, hasMatched) VALUES ($1,$2,$3,$4,$5,$6,$7, $8)")
 	if err != nil {
 		log.Println(err)
-		return false
+		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
 	}
 	defer stmt.Close()
 
-	_, err2 := stmt.Exec(uuidCat, post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls))
+	_, err2 := stmt.Exec(uuidCat, post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), false)
 	if err2 != nil {
 		log.Println(err2)
-		return false
+		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
 	}
-	return true
+	query, err := m.Db.Query("SELECT * FROM cats WHERE id = $1", uuidCat)
+	if err != nil {
+		log.Println(err)
+		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
+	}
+	if query != nil {
+		for query.Next() {
+			var (
+				id            string
+				name          string
+				race          string
+				sex           string
+				ageInMonth    int
+				description   string
+				hasMatched    bool
+				imageUrlsJSON string
+				createdAt     string
+			)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt)
+
+			if err != nil {
+				log.Println(err)
+				return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
+
+			}
+			if id != "" {
+				return model.CatResponseMessage{Status: true, Id: id, CreatedAt: createdAt}
+			}
+
+		}
+	} else {
+		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
+	}
+	return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
 }
 
 // UpdateCat implements CatRepositoryInterface
 func (m *CatRepository) UpdateCat(id string, post model.PostCat) bool {
 
-	_, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6 WHERE id = $7", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id)
+	_, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6, hasMatched = $8 WHERE id = $7", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id, post.HasMatched)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -197,7 +242,11 @@ func (m *CatRepository) UpdateCat(id string, post model.PostCat) bool {
 
 // DeleteCat implements CatRepositoryInterface
 func (m *CatRepository) DeleteCat(id string) bool {
-	_, err := m.Db.Exec("DELETE FROM cats WHERE id = $1", id)
+	delete, err := m.Db.Exec("DELETE FROM cats WHERE id = $1   AND id IN ( SELECT id FROM cats  WHERE id = $1)", id)
+	num, _ := delete.RowsAffected()
+	if num == 0 {
+		return false
+	}
 	if err != nil {
 		log.Println(err)
 		return false

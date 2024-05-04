@@ -41,8 +41,10 @@ func (a *App) Routes() {
 
 	controllerCat := cat.NewCatController(a.DB)
 	publicCat := r.Group("/v1/cat")
+	publicCat.Use(middleware.JwtAuthMiddleware())
 	publicCat.POST("/", controllerCat.InsertCat)
 	publicCat.GET("/", controllerCat.GetAllCats)
+	publicCat.GET("/:id", controllerCat.GetAllCats)
 	publicCat.PUT("/:id", controllerCat.UpdateCat)
 	publicCat.DELETE("/:id", controllerCat.DeleteCat)
 

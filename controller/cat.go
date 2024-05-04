@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"log"
 	"strconv"
 
 	"github.com/Adekabang/social-cat/model"
@@ -19,69 +20,81 @@ func NewCatController(db *sql.DB) CatControllerInterface {
 
 // GetAllCats implements CatControllerInterface
 func (m *CatController) GetAllCats(c *gin.Context) {
+	var id string
+	var limit int
+	var offset int
+	var race string
+	var sex string
+	var hasMatched bool
+	var ageInMonth string
+	var owned bool
+	var search string
 	reqQuery := c.Request.URL.Query()
 
-	var id string
-	if val, ok := reqQuery["id"]; ok && len(val) > 0 {
-		id = val[0]
-	} else {
-		id = ""
-	}
+	var uri model.CatUri
+	if err := c.ShouldBindUri(&uri); err != nil && uri.ID == "" {
+		if val, ok := reqQuery["id"]; ok && len(val) > 0 {
+			id = val[0]
+		} else {
+			id = ""
+		}
 
-	var limit int
-	if val, ok := reqQuery["limit"]; ok && len(val) > 0 {
-		limit, _ = strconv.Atoi(val[0])
-	} else {
-		limit = 0
-	}
+		if val, ok := reqQuery["limit"]; ok && len(val) > 0 {
+			limit, _ = strconv.Atoi(val[0])
+		} else {
+			limit = 0
+		}
 
-	var offset int
-	if val, ok := reqQuery["offset"]; ok && len(val) > 0 {
-		offset, _ = strconv.Atoi(val[0])
-	} else {
-		offset = 0
-	}
+		if val, ok := reqQuery["offset"]; ok && len(val) > 0 {
+			offset, _ = strconv.Atoi(val[0])
+		} else {
+			offset = 0
+		}
 
-	var race string
-	if val, ok := reqQuery["race"]; ok && len(val) > 0 {
-		race = val[0]
-	} else {
-		race = ""
-	}
+		if val, ok := reqQuery["race"]; ok && len(val) > 0 {
+			race = val[0]
+		} else {
+			race = ""
+		}
 
-	var sex string
-	if val, ok := reqQuery["sex"]; ok && len(val) > 0 {
-		sex = val[0]
-	} else {
-		sex = ""
-	}
+		if val, ok := reqQuery["sex"]; ok && len(val) > 0 {
+			sex = val[0]
+		} else {
+			sex = ""
+		}
 
-	var hasMatched bool
-	if val, ok := reqQuery["hasMatched"]; ok && len(val) > 0 {
-		hasMatched, _ = strconv.ParseBool(val[0])
-	} else {
-		hasMatched = true
-	}
+		if val, ok := reqQuery["hasMatched"]; ok && len(val) > 0 {
+			hasMatched, _ = strconv.ParseBool(val[0])
+		} else {
+			hasMatched = true
+		}
 
-	var ageInMonth int
-	if val, ok := reqQuery["ageInMonth"]; ok && len(val) > 0 {
-		ageInMonth, _ = strconv.Atoi(val[0])
-	} else {
-		ageInMonth = 0
-	}
+		if val, ok := reqQuery["ageInMonth"]; ok && len(val) > 0 {
+			ageInMonth = "ageInMonth" + val[0]
+			log.Println(ageInMonth)
+			// ageInMonth, _ = strconv.Atoi(val[0])
+		} else {
+			ageInMonth = ""
+		}
 
-	var owned bool
-	if val, ok := reqQuery["owned"]; ok && len(val) > 0 {
-		owned, _ = strconv.ParseBool(val[0])
-	} else {
-		owned = true
-	}
+		if val, ok := reqQuery["owned"]; ok && len(val) > 0 {
+			owned, _ = strconv.ParseBool(val[0])
+		} else {
+			owned = true
+		}
 
-	var search string
-	if val, ok := reqQuery["search"]; ok && len(val) > 0 {
-		search = val[0]
+		if val, ok := reqQuery["search"]; ok && len(val) > 0 {
+			search = val[0]
+		} else {
+			search = ""
+		}
+	} else if uri.ID != "" {
+		id = uri.ID
 	} else {
-		search = ""
+		if err := c.ShouldBind(&uri); err != nil {
+			c.JSON(400, gin.H{"status": "failed", "msg": err})
+			return
+		}
 	}
 
 	DB := m.Db
@@ -101,7 +114,7 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "success", "data": get, "msg": "get cats successfully"})
 		return
 	} else {
-		c.JSON(200, gin.H{"status": "success", "data": nil, "msg": "cats not found"})
+		c.JSON(200, gin.H{"status": "success", "data": make([]string, 0), "msg": "cats not found"})
 		return
 	}
 }
@@ -116,11 +129,11 @@ func (m *CatController) InsertCat(c *gin.Context) {
 	}
 	repository := repository.NewCatRepository(DB)
 	insert := repository.InsertCat(post)
-	if insert {
-		c.JSON(200, gin.H{"status": "success", "msg": "insert cat successfully"})
+	if insert.Status {
+		c.JSON(201, gin.H{"message": "success", "data": gin.H{"id": insert.Id, "createdAt": insert.CreatedAt}})
 		return
 	} else {
-		c.JSON(500, gin.H{"status": "failed", "msg": "insert cat failed"})
+		c.JSON(500, gin.H{"message": "failed", "msg": "insert cat failed"})
 		return
 	}
 }
@@ -163,7 +176,7 @@ func (m *CatController) DeleteCat(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "success", "msg": "delete cat successfully"})
 		return
 	} else {
-		c.JSON(500, gin.H{"status": "failed", "msg": "delete cat failed"})
+		c.JSON(404, gin.H{"data": make([]string, 0)})
 		return
 	}
 }
