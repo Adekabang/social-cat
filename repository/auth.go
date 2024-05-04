@@ -57,11 +57,11 @@ func (m *AuthRepository) Register(user model.RegisterUser) model.ResponseMessage
 }
 
 func (m *AuthRepository) Login(input model.LoginUser) model.ResponseMessage {
-	var response model.ResponseMessage
+	response := model.ResponseMessage{Status: "failed", Msg: "user not found"}
 	query, err := m.Db.Query("SELECT * FROM users WHERE email = $1", input.Email)
 	if err != nil {
 		log.Println(err)
-		response = model.ResponseMessage{Status: "failed", Msg: "user not found"}
+		response = model.ResponseMessage{Status: "failed", Msg: "server error"}
 	}
 	if query != nil {
 		for query.Next() {
@@ -84,13 +84,12 @@ func (m *AuthRepository) Login(input model.LoginUser) model.ResponseMessage {
 				token, err := utils.GenerateToken(id)
 				if err != nil {
 					log.Println(err)
-					response = model.ResponseMessage{Status: "failed", Msg: "error"}
+					response = model.ResponseMessage{Status: "failed", Msg: "server error"}
 				}
 				response = model.ResponseMessage{Status: "success", Msg: token, Data: model.UserData{Email: email, Name: name}}
 			}
 
 		}
 	}
-
 	return response
 }
