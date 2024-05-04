@@ -1,6 +1,10 @@
-## Migrate
+## Migrate Up
 ```sh
 migrate -database "postgres://postgres:password@127.0.0.1:5432/social_cat?sslmode=disable" -path db/migrations up
+```
+## Migrate Drop
+```sh
+migrate -database "postgres://postgres:password@127.0.0.1:5432/social_cat?sslmode=disable" -path db/migrations drop -f
 ```
 
 # Requirement:
