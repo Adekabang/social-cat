@@ -6,5 +6,8 @@ CREATE TABLE cats
     sex VARCHAR(6) NOT NULL CHECK (sex IN ('male', 'female')),
     ageInMonth INT NOT NULL CHECK (ageInMonth >= 1 AND ageInMonth <= 120082),
     description VARCHAR(200) NOT NULL CHECK (LENGTH(description) >= 1 AND LENGTH(description) <= 200),
-    imageUrls VARCHAR [] NOT NULL
+    imageUrls VARCHAR
+    [] NOT NULL,
+    created_at timestamptz default now
+    ()
 )
