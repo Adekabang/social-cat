@@ -31,7 +31,7 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) bool {
 
 	uuidMatch := uuid.New()
 
-	stmt, err := m.Db.Prepare("INSERT INTO match(id, issuedBy, issuerCatId, receiverCatId, message, status) VALUES ($1,$2,$3,$4,$5,$6)")
+	stmt, err := m.Db.Prepare("INSERT INTO matches(id, issuedBy, issuerCatId, receiverCatId, message, status) VALUES ($1,$2,$3,$4,$5,$6)")
 	if err != nil {
 		log.Println(err)
 		return false
@@ -43,7 +43,7 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) bool {
 		log.Println(err2)
 		return false
 	}
-	query, err := m.Db.Query("SELECT * FROM match WHERE id = $1", uuidMatch)
+	query, err := m.Db.Query("SELECT * FROM matches WHERE id = $1", uuidMatch)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -82,7 +82,7 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 
 	// gimana caranya ngeget kalo kita sebagai receiver cok
 
-	query, err := m.Db.Query("SELECT * FROM match WHERE issuedby = $1 ", userId)
+	query, err := m.Db.Query("SELECT * FROM matches WHERE issuedby = $1 ", userId)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -127,7 +127,7 @@ func (m *MatchRepository) DeleteRequestMatch(matchId string, userId string) bool
 
 	// check if already approved / reject
 
-	delete, err := m.Db.Exec("DELETE FROM match WHERE id = $1 AND id IN ( SELECT id FROM match WHERE id = $1) AND issuedby = $2", matchId, userId)
+	delete, err := m.Db.Exec("DELETE FROM matches WHERE id = $1 AND id IN ( SELECT id FROM match WHERE id = $1) AND issuedby = $2", matchId, userId)
 	num, _ := delete.RowsAffected()
 	if num == 0 {
 		return false
@@ -144,7 +144,7 @@ func (m *MatchRepository) ApproveMatch(id string) bool {
 
 	// other match request that matches both the issuer and the receiver cat’s, will get removed
 
-	approve, err := m.Db.Exec("UPDATE match SET status = $1 WHERE id = $2", "approve", id)
+	approve, err := m.Db.Exec("UPDATE matches SET status = $1 WHERE id = $2", "approve", id)
 	num, _ := approve.RowsAffected()
 	if num == 0 {
 		return false
@@ -160,7 +160,7 @@ func (m *MatchRepository) RejectMatch(id string) bool {
 
 	// other match request that matches both the issuer and the receiver cat’s, will get removed
 
-	approve, err := m.Db.Exec("UPDATE match SET status = $1 WHERE id = $2", "reject", id)
+	approve, err := m.Db.Exec("UPDATE matches SET status = $1 WHERE id = $2", "reject", id)
 	num, _ := approve.RowsAffected()
 	if num == 0 {
 		return false

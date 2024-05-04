@@ -160,8 +160,9 @@ func (m *CatRepository) GetOneCat(id string) bool {
 				hasMatched    bool
 				imageUrlsJSON string
 				createdAt     string
+				ownerId       string
 			)
-			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId)
 
 			if err != nil {
 				log.Println(err)
@@ -236,7 +237,7 @@ func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 // UpdateCat implements CatRepositoryInterface
 func (m *CatRepository) UpdateCat(id string, post model.PostCat) bool {
 
-	_, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6, hasMatched = $8 WHERE id = $7", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id, post.HasMatched)
+	_, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6 WHERE id = $7", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id)
 	if err != nil {
 		log.Println(err)
 		return false
