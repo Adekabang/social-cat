@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"log"
 	"strconv"
 
 	"github.com/Adekabang/social-cat/model"
@@ -134,17 +135,46 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 func (m *CatController) InsertCat(c *gin.Context) {
 	DB := m.Db
 	var post model.PostCat
-	if err := c.ShouldBind(&post); err != nil {
-		c.JSON(400, gin.H{"status": "failed", "msg": err})
-		return
-	}
 
 	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
 	if err != nil {
-		c.JSON(500, gin.H{"message": "failed", "msg": "failed to get user id"})
+		c.JSON(401, gin.H{"message": "failed", "msg": "failed to get user id"})
 		return
 	}
 
+	if err := c.ShouldBind(&post); err != nil {
+		log.Println(err)
+	}
+	var errMessage []string
+	isName := utils.ValidateCatName(post.Name)
+	if !isName {
+		errMessage = append(errMessage, "Name: not null, minLength 1, maxLength 30.")
+	}
+	isRace := utils.ValidateCatRace(post.Race)
+	if !isRace {
+		errMessage = append(errMessage, "Race: not null, options: Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman.")
+	}
+	isSex := utils.ValidateCatSex(post.Sex)
+	if !isSex {
+		errMessage = append(errMessage, "Sex: not null, options: male, female.")
+	}
+	isAgeInMonth := utils.ValidateCatAgeInMonth(post.AgeInMonth)
+	if !isAgeInMonth {
+		errMessage = append(errMessage, "AgeInMonth: not null, min: 1, max: 120082.")
+	}
+	isDescription := utils.ValidateCatDescription(post.Description)
+	if !isDescription {
+		errMessage = append(errMessage, "Description: not null, minLength 1, maxLength 200.")
+	}
+	isImageUrls := utils.ValidateCatImageUrls(post.ImageUrls)
+	if !isImageUrls {
+		errMessage = append(errMessage, "ImageUrls: not null, Array of string, min 1 items, URL format.")
+	}
+
+	if errMessage != nil {
+		c.JSON(400, gin.H{"status": "failed", "msg": errMessage})
+		return
+	}
 	post.OwnerId = userId
 
 	repository := repository.NewCatRepository(DB)
@@ -153,7 +183,7 @@ func (m *CatController) InsertCat(c *gin.Context) {
 		c.JSON(201, gin.H{"message": "success", "data": gin.H{"id": insert.Id, "createdAt": insert.CreatedAt}})
 		return
 	} else {
-		c.JSON(500, gin.H{"message": "failed", "msg": "insert cat failed"})
+		c.JSON(500, gin.H{"message": "failed", "msg": "server error"})
 		return
 	}
 }
