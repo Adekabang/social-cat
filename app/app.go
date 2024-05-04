@@ -5,6 +5,7 @@ import (
 
 	auth "github.com/Adekabang/social-cat/controller"
 	cat "github.com/Adekabang/social-cat/controller"
+	match "github.com/Adekabang/social-cat/controller"
 	user "github.com/Adekabang/social-cat/controller"
 	"github.com/Adekabang/social-cat/db"
 	"github.com/Adekabang/social-cat/middleware"
@@ -47,6 +48,13 @@ func (a *App) Routes() {
 	publicCat.GET("/:id", controllerCat.GetAllCats)
 	publicCat.PUT("/:id", controllerCat.UpdateCat)
 	publicCat.DELETE("/:id", controllerCat.DeleteCat)
+
+	controllerCatMatch := match.NewMatchController(a.DB)
+	publicCat.POST("/match", controllerCatMatch.RequestMatch)
+	publicCat.GET("/match", controllerCatMatch.GetMatchRequest)
+	publicCat.POST("/match/approve", controllerCatMatch.ApproveMatch)
+	publicCat.POST("/match/reject", controllerCatMatch.RejectMatch)
+	publicCat.DELETE("/match/:id", controllerCatMatch.DeleteRequestMatch)
 
 	a.Router = r
 }
