@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -53,26 +53,80 @@ func ExtractToken(c *gin.Context) string {
 	return ""
 }
 
-func ExtractTokenID(c *gin.Context) (uint, error) {
-	godotenv.Load(".env.local")
+// func ExtractTokenID(c *gin.Context) (uint, error) {
+// 	godotenv.Load(".env.local")
 
-	tokenString := ExtractToken(c)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+// 	tokenString := ExtractToken(c)
+// 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+// 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+// 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+// 		}
+// 		return []byte(os.Getenv("JWT_SECRET")), nil
+// 	})
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	claims, ok := token.Claims.(jwt.MapClaims)
+// 	if ok && token.Valid {
+// 		uid, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["user_id"]), 10, 32)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		return uint(uid), nil
+// 	}
+// 	return 0, nil
+// }
+
+func ExtractBearerToken(header string) (string, error) {
+	if header == "" {
+		return "", errors.New("bad header value given")
+	}
+
+	jwtToken := strings.Split(header, " ")
+	if len(jwtToken) != 2 {
+		return "", errors.New("incorrectly formatted authorization header")
+	}
+
+	return jwtToken[1], nil
+}
+
+func ParseToken(jwtToken string) (*jwt.Token, error) {
+	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+		if _, OK := token.Method.(*jwt.SigningMethodHMAC); !OK {
+			return nil, errors.New("bad signed method received")
 		}
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
+
 	if err != nil {
-		return 0, err
+		return nil, errors.New("bad jwt token")
 	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if ok && token.Valid {
-		uid, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["user_id"]), 10, 32)
-		if err != nil {
-			return 0, err
-		}
-		return uint(uid), nil
+
+	return token, nil
+}
+
+func GetUserId(header string) (string, error) {
+	var userId string
+	jwtToken, err := ExtractBearerToken(header)
+	if err != nil {
+		return "", errors.New("failed to extract bearer token")
 	}
-	return 0, nil
+
+	token, err := ParseToken(jwtToken)
+	if err != nil {
+		return "", errors.New("failed to parsing token")
+	}
+
+	claims, OK := token.Claims.(jwt.MapClaims)
+	if !OK {
+		return "", errors.New("failed to claims token")
+	}
+
+	if str, ok := claims["user_id"].(string); ok {
+		userId = str
+	} else {
+		return "", errors.New("user id is not string")
+	}
+
+	return userId, nil
 }

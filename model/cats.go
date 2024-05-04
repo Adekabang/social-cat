@@ -20,6 +20,7 @@ type PostCat struct {
 	Description string   `json:"description"`
 	HasMatched  bool     `json:"hasMatched"`
 	ImageUrls   []string `json:"imageUrls"`
+	OwnerId     string   `json:"ownerId"`
 }
 
 type GetCat struct {
@@ -32,6 +33,7 @@ type GetCat struct {
 	AgeInMonth string `json:"ageInMonth"`
 	Owned      bool   `json:"owned"`
 	Search     string `json:"search"`
+	OwnerId    string `json:"ownerId"`
 }
 
 type CatUri struct {

@@ -2,11 +2,11 @@ package controller
 
 import (
 	"database/sql"
-	"log"
 	"strconv"
 
 	"github.com/Adekabang/social-cat/model"
 	"github.com/Adekabang/social-cat/repository"
+	"github.com/Adekabang/social-cat/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +20,7 @@ func NewCatController(db *sql.DB) CatControllerInterface {
 
 // GetAllCats implements CatControllerInterface
 func (m *CatController) GetAllCats(c *gin.Context) {
+
 	var id string
 	var limit int
 	var offset int
@@ -29,6 +30,8 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 	var ageInMonth string
 	var owned bool
 	var search string
+	var ownerId string
+
 	reqQuery := c.Request.URL.Query()
 
 	var uri model.CatUri
@@ -71,7 +74,6 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 
 		if val, ok := reqQuery["ageInMonth"]; ok && len(val) > 0 {
 			ageInMonth = "ageInMonth" + val[0]
-			log.Println(ageInMonth)
 			// ageInMonth, _ = strconv.Atoi(val[0])
 		} else {
 			ageInMonth = ""
@@ -79,8 +81,16 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 
 		if val, ok := reqQuery["owned"]; ok && len(val) > 0 {
 			owned, _ = strconv.ParseBool(val[0])
+
+			userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
+			if err != nil {
+				return
+			}
+			ownerId = userId
+
 		} else {
-			owned = true
+			owned = false
+			ownerId = ""
 		}
 
 		if val, ok := reqQuery["search"]; ok && len(val) > 0 {
@@ -109,6 +119,7 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 		AgeInMonth: ageInMonth,
 		Owned:      owned,
 		Search:     search,
+		OwnerId:    ownerId,
 	})
 	if get != nil {
 		c.JSON(200, gin.H{"status": "success", "data": get, "msg": "get cats successfully"})
@@ -127,6 +138,15 @@ func (m *CatController) InsertCat(c *gin.Context) {
 		c.JSON(400, gin.H{"status": "failed", "msg": err})
 		return
 	}
+
+	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
+	if err != nil {
+		c.JSON(500, gin.H{"message": "failed", "msg": "failed to get user id"})
+		return
+	}
+
+	post.OwnerId = userId
+
 	repository := repository.NewCatRepository(DB)
 	insert := repository.InsertCat(post)
 	if insert.Status {

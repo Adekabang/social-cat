@@ -73,6 +73,10 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 		conditions = append(conditions, fmt.Sprintf(cat.AgeInMonth))
 	}
 
+	if cat.Owned {
+		conditions = append(conditions, fmt.Sprintf("ownerid = '%s'", cat.OwnerId))
+	}
+
 	// Construct the WHERE clause
 	whereClause := ""
 	if len(conditions) > 0 {
@@ -114,9 +118,10 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 				hasMatched    bool
 				imageUrlsJSON string
 				createdAt     string
+				ownerId       string
 			)
 
-			err := rows.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt)
+			err := rows.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -179,14 +184,14 @@ func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 
 	uuidCat := uuid.New()
 
-	stmt, err := m.Db.Prepare("INSERT INTO cats(id, name, race, sex, ageInMonth, description, imageUrls, hasMatched) VALUES ($1,$2,$3,$4,$5,$6,$7, $8)")
+	stmt, err := m.Db.Prepare("INSERT INTO cats(id, name, race, sex, ageInMonth, description, imageUrls, hasMatched, ownerId) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)")
 	if err != nil {
 		log.Println(err)
 		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
 	}
 	defer stmt.Close()
 
-	_, err2 := stmt.Exec(uuidCat, post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), false)
+	_, err2 := stmt.Exec(uuidCat, post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), false, post.OwnerId)
 	if err2 != nil {
 		log.Println(err2)
 		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
@@ -208,8 +213,9 @@ func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 				hasMatched    bool
 				imageUrlsJSON string
 				createdAt     string
+				ownerId       string
 			)
-			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId)
 
 			if err != nil {
 				log.Println(err)

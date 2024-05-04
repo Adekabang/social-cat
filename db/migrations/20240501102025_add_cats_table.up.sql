@@ -11,5 +11,6 @@ CREATE TABLE cats
         VARCHAR
     [] NOT NULL,
     created_at timestamptz default now
-    ()
+    (),
+	ownerId UUID REFERENCES users(id)
 )
