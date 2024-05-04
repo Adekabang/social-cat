@@ -7,6 +7,6 @@ import (
 type CatRepositoryInterface interface {
 	InsertCat(model.PostCat) model.CatResponseMessage
 	GetAllCats(model.GetCat) []model.Cat
-	UpdateCat(string, model.PostCat) bool
+	UpdateCat(string, model.PostCat) int
 	DeleteCat(string) bool
 }

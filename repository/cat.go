@@ -235,16 +235,41 @@ func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 }
 
 // UpdateCat implements CatRepositoryInterface
-func (m *CatRepository) UpdateCat(id string, post model.PostCat) bool {
+func (m *CatRepository) UpdateCat(id string, post model.PostCat) int {
 
-	_, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6 WHERE id = $7", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id)
+	var count int
+
+	err := m.Db.QueryRow("SELECT COUNT(*) FROM matches WHERE receivercatid = $1 OR issuercatid = $1", id).Scan(&count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if count >= 1 {
+		var sex string
+		err := m.Db.QueryRow("SELECT sex FROM cats WHERE id = $1", id).Scan(&sex)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if sex != post.Sex {
+			return 400
+		}
+	}
+	update, err := m.Db.Exec("UPDATE cats SET name = $1, race = $2, sex = $3, ageInMonth = $4, description = $5, imageUrls = $6 WHERE id = $7 AND ownerid = $8", post.Name, post.Race, post.Sex, post.AgeInMonth, post.Description, pq.Array(post.ImageUrls), id, post.OwnerId)
+	num, _ := update.RowsAffected()
+	if num == 0 {
+		log.Println(err)
+		return 404
+	}
 	if err != nil {
 		log.Println(err)
-		return false
+		return 500
 	}
 
 	getCat := m.GetOneCat(id)
-	return getCat
+	if getCat {
+		return 200
+	}
+
+	return 500
 }
 
 // DeleteCat implements CatRepositoryInterface

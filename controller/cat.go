@@ -138,7 +138,7 @@ func (m *CatController) InsertCat(c *gin.Context) {
 
 	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
 	if err != nil {
-		c.JSON(401, gin.H{"message": "failed", "msg": "failed to get user id"})
+		c.JSON(401, gin.H{"message": "failed", "msg": "Unauthorized"})
 		return
 	}
 
@@ -201,13 +201,58 @@ func (m *CatController) UpdateCat(c *gin.Context) {
 		c.JSON(400, gin.H{"status": "failed", "msg": err})
 		return
 	}
+	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
+	if err != nil {
+		c.JSON(401, gin.H{"message": "failed", "msg": "Unauthorized"})
+		return
+	}
+
+	var errMessage []string
+	isName := utils.ValidateCatName(post.Name)
+	if !isName {
+		errMessage = append(errMessage, "Name: not null, minLength 1, maxLength 30.")
+	}
+	isRace := utils.ValidateCatRace(post.Race)
+	if !isRace {
+		errMessage = append(errMessage, "Race: not null, options: Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman.")
+	}
+	isSex := utils.ValidateCatSex(post.Sex)
+	if !isSex {
+		errMessage = append(errMessage, "Sex: not null, options: male, female.")
+	}
+	isAgeInMonth := utils.ValidateCatAgeInMonth(post.AgeInMonth)
+	if !isAgeInMonth {
+		errMessage = append(errMessage, "AgeInMonth: not null, min: 1, max: 120082.")
+	}
+	isDescription := utils.ValidateCatDescription(post.Description)
+	if !isDescription {
+		errMessage = append(errMessage, "Description: not null, minLength 1, maxLength 200.")
+	}
+	isImageUrls := utils.ValidateCatImageUrls(post.ImageUrls)
+	if !isImageUrls {
+		errMessage = append(errMessage, "ImageUrls: not null, Array of string, min 1 items, URL format.")
+	}
+
+	if errMessage != nil {
+		c.JSON(400, gin.H{"status": "failed", "msg": errMessage})
+		return
+	}
+
+	post.OwnerId = userId
+
 	repository := repository.NewCatRepository(DB)
 	update := repository.UpdateCat(uri.ID, post)
-	if update {
+	if update == 200 {
 		c.JSON(200, gin.H{"status": "success", "data": update, "msg": "update cat successfully"})
 		return
+	} else if update == 404 {
+		c.JSON(update, gin.H{"status": "failed", "msg": "cat id not found"})
+		return
+	} else if update == 400 {
+		c.JSON(update, gin.H{"status": "failed", "msg": "cannot edit sex if your cat have pending match request"})
+		return
 	} else {
-		c.JSON(500, gin.H{"status": "failed", "data": nil, "msg": "update cat failed"})
+		c.JSON(500, gin.H{"status": "failed", "msg": "server error"})
 		return
 	}
 }
