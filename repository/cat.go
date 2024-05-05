@@ -107,7 +107,7 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 		log.Println(err)
 		return nil
 	}
-	// defer rows.Close()
+	defer rows.Close()
 
 	var cats []model.Cat
 	if rows != nil {
@@ -153,6 +153,7 @@ func (m *CatRepository) GetOneCat(id string) bool {
 		log.Println(err)
 		return false
 	}
+	defer query.Close()
 	if query != nil {
 		for query.Next() {
 			var (
@@ -208,6 +209,7 @@ func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 		log.Println(err)
 		return model.CatResponseMessage{Status: false, Id: "", CreatedAt: ""}
 	}
+	defer query.Close()
 	if query != nil {
 		for query.Next() {
 			var (

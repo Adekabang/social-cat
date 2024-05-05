@@ -63,6 +63,7 @@ func (m *AuthRepository) Login(input model.LoginUser) model.ResponseMessage {
 		log.Println(err)
 		response = model.ResponseMessage{Status: "failed", Msg: "server error"}
 	}
+	defer query.Close()
 	if query != nil {
 		for query.Next() {
 			var (

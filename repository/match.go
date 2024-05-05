@@ -95,6 +95,7 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
 
 	}
+	defer query.Close()
 	if query != nil {
 		for query.Next() {
 			var (
@@ -137,7 +138,7 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 		log.Println(err)
 		return nil
 	}
-
+	defer query.Close()
 	var matchs []model.GetMatch
 	if query != nil {
 		for query.Next() {

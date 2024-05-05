@@ -34,6 +34,7 @@ func (m *UserRepository) GetAllUsers() []model.GetUser {
 		log.Println(err)
 		return nil
 	}
+	defer query.Close()
 	var users []model.GetUser
 	if query != nil {
 		for query.Next() {
@@ -62,6 +63,7 @@ func (m *UserRepository) GetOneUser(id string) model.GetUser {
 		log.Println(err)
 		return model.GetUser{}
 	}
+	defer query.Close()
 	var user model.GetUser
 	if query != nil {
 		for query.Next() {
