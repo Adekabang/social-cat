@@ -219,11 +219,47 @@ func (m *MatchRepository) DeleteRequestMatch(matchId string, userId string) mode
 }
 
 // ApproveMatch implements CatRepositoryInterface
-func (m *MatchRepository) ApproveMatch(id string) bool {
+func (m *MatchRepository) ApproveMatch(idMatch string, userIdFromToken string) bool {
 
-	// other match request that matches both the issuer and the receiver cat’s, will get removed
+	dataMatches, err := m.Db.Query("SELECT receiverId, status FROM matches WHERE id = $1", idMatch)
+	if err != nil {
+		log.Println(err)
+		return false
 
-	approve, err := m.Db.Exec("UPDATE matches SET status = $1 WHERE id = $2", "approve", id)
+	}
+	defer dataMatches.Close()
+
+	if dataMatches != nil {
+		for dataMatches.Next() {
+			var (
+				receiverId string
+				status     string
+			)
+			err := dataMatches.Scan(&receiverId, &status)
+
+			if err != nil {
+				log.Println(err)
+				return false
+
+			}
+
+			// check userid si receiver bukan
+			if userIdFromToken != receiverId {
+				log.Println("beda userIdFromToken ama receiverId")
+				return false
+			}
+
+			// check statusnya pending apa bukan
+			if status != "pending" {
+				log.Println("status bukan pending")
+				return false
+			}
+
+		}
+	}
+
+	// change status di table matches
+	approve, err := m.Db.Exec("UPDATE matches SET status = $1 WHERE id = $2", "approve", idMatch)
 	num, _ := approve.RowsAffected()
 	if num == 0 {
 		return false
@@ -232,14 +268,111 @@ func (m *MatchRepository) ApproveMatch(id string) bool {
 		log.Println(err)
 		return false
 	}
+
+	// hasMatched tiap kucing jadi true
+	// select id kucing issuer dan receiver
+	idsCat, err := m.Db.Query("SELECT issuercatid, receivercatid FROM matches WHERE id = $1", idMatch)
+	if err != nil {
+		log.Println(err)
+		return false
+
+	}
+	defer idsCat.Close()
+
+	if idsCat != nil {
+		for idsCat.Next() {
+			var (
+				issuerCatId   string
+				receiverCatId string
+			)
+			err := idsCat.Scan(&issuerCatId, &receiverCatId)
+
+			if err != nil {
+				log.Println(err)
+				return false
+
+			}
+
+			// update hasMatched issuer cat jadi true
+			updateIssuer, err := m.Db.Exec("UPDATE cats SET hasMatched = $1 WHERE id = $2", true, issuerCatId)
+			numIssuer, _ := updateIssuer.RowsAffected()
+			if numIssuer == 0 {
+				log.Println(err)
+				return false
+			}
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+
+			// update hasMatched receiver cat jadi true
+			updateReceiver, err := m.Db.Exec("UPDATE cats SET hasMatched = $1 WHERE id = $2", true, receiverCatId)
+			numReceiver, _ := updateReceiver.RowsAffected()
+			if numReceiver == 0 {
+				log.Println(err)
+				return false
+			}
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+
+			// other match request that matches both the issuer and the receiver cat’s, will get removed
+			delete, err := m.Db.Exec("DELETE FROM matches WHERE (issuerCatId = $1 OR receiverCatId = $2 OR issuerCatId = $2 OR receiverCatId = $1) AND status = 'pending'", issuerCatId, receiverCatId)
+			num, _ := delete.RowsAffected()
+			log.Println(num)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+
+		}
+	}
+
 	return true
 }
 
-func (m *MatchRepository) RejectMatch(id string) bool {
+func (m *MatchRepository) RejectMatch(idMatch string, userIdFromToken string) bool {
 
-	// other match request that matches both the issuer and the receiver cat’s, will get removed
+	dataMatches, err := m.Db.Query("SELECT receiverId, status FROM matches WHERE id = $1", idMatch)
+	if err != nil {
+		log.Println(err)
+		return false
 
-	approve, err := m.Db.Exec("UPDATE matches SET status = $1 WHERE id = $2", "reject", id)
+	}
+	defer dataMatches.Close()
+
+	if dataMatches != nil {
+		for dataMatches.Next() {
+			var (
+				receiverId string
+				status     string
+			)
+			err := dataMatches.Scan(&receiverId, &status)
+
+			if err != nil {
+				log.Println(err)
+				return false
+
+			}
+
+			// check userid si receiver bukan
+			if userIdFromToken != receiverId {
+				log.Println("beda userIdFromToken ama receiverId")
+				return false
+			}
+
+			// check statusnya pending apa bukan
+			if status != "pending" {
+				log.Println("status bukan pending")
+				return false
+			}
+
+		}
+	}
+
+	// change status di table matches
+	approve, err := m.Db.Exec("UPDATE matches SET status = $1 WHERE id = $2", "reject", idMatch)
 	num, _ := approve.RowsAffected()
 	if num == 0 {
 		return false
@@ -248,5 +381,6 @@ func (m *MatchRepository) RejectMatch(id string) bool {
 		log.Println(err)
 		return false
 	}
+
 	return true
 }

@@ -101,8 +101,13 @@ func (m *MatchController) ApproveMatch(c *gin.Context) {
 		c.JSON(400, gin.H{"status": "failed", "msg": err})
 		return
 	}
+	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
+	if err != nil {
+		c.JSON(500, gin.H{"message": "failed", "msg": "failed to get user id"})
+		return
+	}
 	repository := repository.NewMatchRepository(DB)
-	approve := repository.ApproveMatch(uri.MatchId)
+	approve := repository.ApproveMatch(uri.MatchId, userId)
 	if approve {
 		c.JSON(200, gin.H{"status": "success", "msg": "approve request successfully"})
 		return
@@ -119,8 +124,13 @@ func (m *MatchController) RejectMatch(c *gin.Context) {
 		c.JSON(400, gin.H{"status": "failed", "msg": err})
 		return
 	}
+	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
+	if err != nil {
+		c.JSON(500, gin.H{"message": "failed", "msg": "failed to get user id"})
+		return
+	}
 	repository := repository.NewMatchRepository(DB)
-	approve := repository.RejectMatch(uri.MatchId)
+	approve := repository.RejectMatch(uri.MatchId, userId)
 	if approve {
 		c.JSON(200, gin.H{"status": "success", "msg": "reject request successfully"})
 		return
