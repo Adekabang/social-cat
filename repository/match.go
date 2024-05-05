@@ -131,7 +131,7 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 
 	// gimana caranya ngeget kalo kita sebagai receiver cok
 
-	query, err := m.Db.Query("SELECT * FROM matches WHERE issuedby = $1 ", userId)
+	query, err := m.Db.Query("SELECT * FROM matches WHERE issuedby = $1 or receiverId=$1", userId)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -144,12 +144,13 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 				id            string
 				createdAt     string
 				issuedBy      string
+				receiverId    string
 				issuerCatId   string
 				receiverCatId string
 				message       string
 				status        string
 			)
-			err := query.Scan(&id, &createdAt, &issuedBy, &issuerCatId, &receiverCatId, &message, &status)
+			err := query.Scan(&id, &createdAt, &issuedBy, &receiverId, &issuerCatId, &receiverCatId, &message, &status)
 
 			if err != nil {
 				log.Println(err)
