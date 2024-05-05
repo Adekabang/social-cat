@@ -6,6 +6,7 @@ import (
 
 	"github.com/Adekabang/social-cat/model"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type MatchRepository struct {
@@ -155,13 +156,31 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 				return nil
 			}
 
+			var issuerName, issuerEmail, issuerCreatedAt string
 			// get data issuer by userid
+			err = m.Db.QueryRow("SELECT name, email, created_at FROM users WHERE id = $1", issuedBy).Scan(&issuerName, &issuerEmail, &issuerCreatedAt)
+			if err != nil {
+				log.Println("get issuer")
+				log.Fatal(err)
+			}
+			issuerData := model.IssuedBy{Name: issuerName, Email: issuerEmail, CreatedAt: issuerCreatedAt}
+
+			var userCat, matchCat model.Cat
+			// get data userCatDetail by issuerCatId
+			err = m.Db.QueryRow("SELECT id, name, race, sex, ageinmonth, description, hasmatched, created_at, imageurls FROM cats WHERE id = $1", issuerCatId).Scan(&userCat.Id, &userCat.Name, &userCat.Race, &userCat.Sex, &userCat.AgeInMonth, &userCat.Description, &userCat.HasMatched, &userCat.CreatedAt, pq.Array(&userCat.ImageUrls))
+			if err != nil {
+				log.Println("get issuer cat")
+				log.Fatal(err)
+			}
 
 			// get data matchCatDetail by receiverCatId
+			err = m.Db.QueryRow("SELECT id, name, race, sex, ageinmonth, description, hasmatched, created_at, imageurls FROM cats WHERE id = $1", receiverCatId).Scan(&matchCat.Id, &matchCat.Name, &matchCat.Race, &matchCat.Sex, &matchCat.AgeInMonth, &matchCat.Description, &matchCat.HasMatched, &matchCat.CreatedAt, pq.Array(&matchCat.ImageUrls))
+			if err != nil {
+				log.Println("get match cat")
+				log.Fatal(err)
+			}
 
-			// get data userCatDetail by issuerCatId
-
-			match := model.GetMatch{Id: id, Message: message, CreatedAt: createdAt}
+			match := model.GetMatch{Id: id, IssuedBy: issuerData, Message: message, UserCatDetail: userCat, MatchCatDetail: matchCat, CreatedAt: createdAt}
 			matchs = append(matchs, match)
 		}
 	} else {
