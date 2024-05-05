@@ -76,14 +76,14 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 
 	uuidMatch := uuid.New()
 
-	stmt, err := m.Db.Prepare("INSERT INTO matches(id, issuedBy, issuerCatId, receiverCatId, message, status) VALUES ($1,$2,$3,$4,$5,$6)")
+	stmt, err := m.Db.Prepare("INSERT INTO matches(id, issuedBy, receiverid, issuerCatId, receiverCatId, message, status) VALUES ($1,$2,$3,$4,$5,$6,$7)")
 	if err != nil {
 		log.Println(err)
 		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
 	}
 	defer stmt.Close()
 
-	_, err2 := stmt.Exec(uuidMatch, requestMatch.IssuedBy, requestMatch.MatchCatId, requestMatch.UserCatId, requestMatch.Message, "pending")
+	_, err2 := stmt.Exec(uuidMatch, requestMatch.IssuedBy, matchCatOwner, requestMatch.MatchCatId, requestMatch.UserCatId, requestMatch.Message, "pending")
 	if err2 != nil {
 		log.Println(err2)
 		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
@@ -101,12 +101,13 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 				id            string
 				createdAt     string
 				issuedBy      string
+				receiverid    string
 				issuerCatId   string
 				receiverCatId string
 				message       string
 				status        string
 			)
-			err := query.Scan(&id, &createdAt, &issuedBy, &issuerCatId, &receiverCatId, &message, &status)
+			err := query.Scan(&id, &createdAt, &issuedBy, &receiverid, &issuerCatId, &receiverCatId, &message, &status)
 
 			if err != nil {
 				log.Println(err)
@@ -195,7 +196,7 @@ func (m *MatchRepository) DeleteRequestMatch(matchId string, userId string) bool
 
 	// check if already approved / reject
 
-	delete, err := m.Db.Exec("DELETE FROM matches WHERE id = $1 AND id IN ( SELECT id FROM match WHERE id = $1) AND issuedby = $2", matchId, userId)
+	delete, err := m.Db.Exec("DELETE FROM matches WHERE id = $1 AND issuedby = $2", matchId, userId)
 	num, _ := delete.RowsAffected()
 	if num == 0 {
 		return false
