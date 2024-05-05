@@ -12,5 +12,7 @@ CREATE TABLE cats
     [] NOT NULL,
     created_at timestamptz default now
     (),
-	ownerId UUID REFERENCES users(id)
+	ownerId UUID REFERENCES users
+    (id),
+    softDelete Boolean default false
 )

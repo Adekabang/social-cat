@@ -69,9 +69,7 @@ func (m *CatController) GetAllCats(c *gin.Context) {
 
 		if val, ok := reqQuery["hasMatched"]; ok && len(val) > 0 {
 			hasMatched, _ = strconv.ParseBool(val[0])
-		} else {
-			hasMatched = true
-		}
+		} //
 
 		if val, ok := reqQuery["ageInMonth"]; ok && len(val) > 0 {
 			ageInMonth = "ageInMonth" + val[0]
@@ -265,8 +263,15 @@ func (m *CatController) DeleteCat(c *gin.Context) {
 		c.JSON(400, gin.H{"status": "failed", "msg": err})
 		return
 	}
+
+	userId, err := utils.GetUserId(c.GetHeader(("Authorization")))
+	if err != nil {
+		c.JSON(401, gin.H{"message": "failed", "msg": "Unauthorized"})
+		return
+	}
+
 	repository := repository.NewCatRepository(DB)
-	delete := repository.DeleteCat(uri.ID)
+	delete := repository.DeleteCat(uri.ID, userId)
 	if delete {
 		c.JSON(200, gin.H{"status": "success", "msg": "delete cat successfully"})
 		return

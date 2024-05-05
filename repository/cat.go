@@ -72,10 +72,14 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 	if cat.AgeInMonth != "" {
 		conditions = append(conditions, fmt.Sprintf(cat.AgeInMonth))
 	}
+	if cat.HasMatched {
+		conditions = append(conditions, fmt.Sprintf("hasmatched = '%t'", cat.HasMatched))
+	}
 
 	if cat.Owned {
 		conditions = append(conditions, fmt.Sprintf("ownerid = '%s'", cat.OwnerId))
 	}
+	conditions = append(conditions, "softdelete = false")
 
 	// Construct the WHERE clause
 	whereClause := ""
@@ -119,9 +123,10 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 				imageUrlsJSON string
 				createdAt     string
 				ownerId       string
+				softDelete    bool
 			)
 
-			err := rows.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId)
+			err := rows.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId, &softDelete)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -143,7 +148,7 @@ func (m *CatRepository) GetAllCats(cat model.GetCat) []model.Cat {
 
 // GetOneCat implements CatRepositoryInterface
 func (m *CatRepository) GetOneCat(id string) bool {
-	query, err := m.Db.Query("SELECT * FROM cats WHERE id = $1", id)
+	query, err := m.Db.Query("SELECT * FROM cats WHERE id = $1 AND softdelete = false", id)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -161,8 +166,9 @@ func (m *CatRepository) GetOneCat(id string) bool {
 				imageUrlsJSON string
 				createdAt     string
 				ownerId       string
+				softDelete    bool
 			)
-			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId, &softDelete)
 
 			if err != nil {
 				log.Println(err)
@@ -215,8 +221,9 @@ func (m *CatRepository) InsertCat(post model.PostCat) model.CatResponseMessage {
 				imageUrlsJSON string
 				createdAt     string
 				ownerId       string
+				softDelete    bool
 			)
-			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId)
+			err := query.Scan(&id, &name, &race, &sex, &ageInMonth, &description, &hasMatched, &imageUrlsJSON, &createdAt, &ownerId, &softDelete)
 
 			if err != nil {
 				log.Println(err)
@@ -273,15 +280,23 @@ func (m *CatRepository) UpdateCat(id string, post model.PostCat) int {
 }
 
 // DeleteCat implements CatRepositoryInterface
-func (m *CatRepository) DeleteCat(id string) bool {
-	delete, err := m.Db.Exec("DELETE FROM cats WHERE id = $1   AND id IN ( SELECT id FROM cats  WHERE id = $1)", id)
-	num, _ := delete.RowsAffected()
+func (m *CatRepository) DeleteCat(id string, userId string) bool {
+	// delete, err := m.Db.Exec("DELETE FROM cats WHERE id = $1", id)
+	// num, _ := delete.RowsAffected()
+	// if num == 0 {
+	// 	return false
+	// }
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return false
+	// }
+	// return true
+	update, err := m.Db.Exec("UPDATE cats SET softdelete = true WHERE id = $1 AND ownerid = $2", id, userId)
+	num, _ := update.RowsAffected()
 	if num == 0 {
-		return false
-	}
-	if err != nil {
 		log.Println(err)
 		return false
 	}
 	return true
+
 }
