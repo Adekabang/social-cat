@@ -1,11 +1,17 @@
 package utils
 
 import (
+	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	godotenv.Load(".env.local")
+	BCRYPT_SALT, _ := strconv.Atoi(os.Getenv("BCRYPT_SALT"))
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), BCRYPT_SALT)
 	return string(bytes), err
 }
 
