@@ -291,8 +291,18 @@ func (m *CatRepository) DeleteCat(id string, userId string) bool {
 	// 	return false
 	// }
 	// return true
+	var deleteStatus bool
+	err := m.Db.QueryRow("SELECT softdelete FROM cats WHERE id = $1", id).Scan(&deleteStatus)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if deleteStatus {
+		return false
+	}
+
 	update, err := m.Db.Exec("UPDATE cats SET softdelete = true WHERE id = $1 AND ownerid = $2", id, userId)
 	num, _ := update.RowsAffected()
+	log.Println(num)
 	if num == 0 {
 		log.Println(err)
 		return false
