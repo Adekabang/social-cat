@@ -9,5 +9,5 @@ type MatchRepositoryInterface interface {
 	GetMatchRequest(string) []model.GetMatch
 	ApproveMatch(string) bool
 	RejectMatch(string) bool
-	DeleteRequestMatch(string, string) bool
+	DeleteRequestMatch(string, string) model.DeleteMatchResponse
 }

@@ -82,11 +82,14 @@ func (m *MatchController) DeleteRequestMatch(c *gin.Context) {
 
 	repository := repository.NewMatchRepository(DB)
 	delete := repository.DeleteRequestMatch(uri.ID, userId)
-	if delete {
-		c.JSON(200, gin.H{"status": "success", "msg": "delete request successfully"})
+	if delete.StatusCode == 200 {
+		c.JSON(200, gin.H{"status": "success", "msg": delete.Message})
+		return
+	} else if delete.StatusCode == 404 {
+		c.JSON(404, gin.H{"data": make([]string, 0)})
 		return
 	} else {
-		c.JSON(404, gin.H{"data": make([]string, 0)})
+		c.JSON(delete.StatusCode, gin.H{"status": "failed", "msg": delete.Message})
 		return
 	}
 }

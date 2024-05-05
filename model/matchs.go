@@ -36,3 +36,8 @@ type CreateMatchResponse struct {
 	IdMatch    string `json:"idMatch"`
 	CreatedAt  string `json:"createdAt"`
 }
+
+type DeleteMatchResponse struct {
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message"`
+}

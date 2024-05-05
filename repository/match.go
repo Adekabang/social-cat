@@ -192,20 +192,30 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 }
 
 // DeleteRequestMatch implements CatRepositoryInterface
-func (m *MatchRepository) DeleteRequestMatch(matchId string, userId string) bool {
+func (m *MatchRepository) DeleteRequestMatch(matchId string, userId string) model.DeleteMatchResponse {
 
+	var status string
 	// check if already approved / reject
-
-	delete, err := m.Db.Exec("DELETE FROM matches WHERE id = $1 AND issuedby = $2", matchId, userId)
-	num, _ := delete.RowsAffected()
-	if num == 0 {
-		return false
+	err := m.Db.QueryRow("SELECT status FROM matches WHERE id = $1 AND issuedby = $2", matchId, userId).Scan(&status)
+	if status == "" {
+		return model.DeleteMatchResponse{StatusCode: 404, Message: "Match Id not found"}
 	}
 	if err != nil {
 		log.Println(err)
-		return false
+		return model.DeleteMatchResponse{StatusCode: 500, Message: "Server Error"}
 	}
-	return true
+	if status == "pending" {
+		_, err := m.Db.Exec("DELETE FROM matches WHERE id = $1 AND issuedby = $2", matchId, userId)
+		// num, _ := delete.RowsAffected()
+		// log.Println(num)
+		if err != nil {
+			log.Println(err)
+			return model.DeleteMatchResponse{StatusCode: 500, Message: "Server Error"}
+		}
+	} else {
+		return model.DeleteMatchResponse{StatusCode: 400, Message: "Failed to delete. Match status is Approved or Rejected"}
+	}
+	return model.DeleteMatchResponse{StatusCode: 200, Message: "Delete request successfully"}
 }
 
 // ApproveMatch implements CatRepositoryInterface
