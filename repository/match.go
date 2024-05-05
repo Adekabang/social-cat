@@ -17,9 +17,18 @@ func NewMatchRepository(db *sql.DB) MatchRepositoryInterface {
 }
 
 // RequestMatch implements MatchRepositoryInterface
-func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) bool {
+func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.CreateMatchResponse {
 
 	// check if issuerCatId or receiverCatId not exist
+	var isValidCatId int
+	err := m.Db.QueryRow("SELECT COUNT(*) FROM cats WHERE id = $1 OR id =$2", requestMatch.MatchCatId, requestMatch.UserCatId).Scan(&isValidCatId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if isValidCatId != 2 {
+		log.Println(isValidCatId)
+		return model.CreateMatchResponse{StatusCode: 404, Message: "Match Cat ID or User Cat ID not found"}
+	}
 
 	// check if issuerCatId is not belong issuer
 
@@ -34,19 +43,21 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) bool {
 	stmt, err := m.Db.Prepare("INSERT INTO matches(id, issuedBy, issuerCatId, receiverCatId, message, status) VALUES ($1,$2,$3,$4,$5,$6)")
 	if err != nil {
 		log.Println(err)
-		return false
+		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
 	}
 	defer stmt.Close()
 
 	_, err2 := stmt.Exec(uuidMatch, requestMatch.IssuedBy, requestMatch.MatchCatId, requestMatch.UserCatId, requestMatch.Message, "pending")
 	if err2 != nil {
 		log.Println(err2)
-		return false
+		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
+
 	}
 	query, err := m.Db.Query("SELECT * FROM matches WHERE id = $1", uuidMatch)
 	if err != nil {
 		log.Println(err)
-		return false
+		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
+
 	}
 	if query != nil {
 		for query.Next() {
@@ -63,18 +74,20 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) bool {
 
 			if err != nil {
 				log.Println(err)
-				return false
+				return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
 
 			}
 			if id != "" {
-				return true
+				return model.CreateMatchResponse{StatusCode: 201, Message: "Match sucessfully created", IdMatch: id, CreatedAt: createdAt}
 			}
 
 		}
 	} else {
-		return false
+		return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
+
 	}
-	return false
+	return model.CreateMatchResponse{StatusCode: 500, Message: "server Error", IdMatch: "", CreatedAt: ""}
+
 }
 
 // GetAllMatchs implements CatRepositoryInterface

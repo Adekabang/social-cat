@@ -36,11 +36,11 @@ func (m *MatchController) RequestMatch(c *gin.Context) {
 
 	repository := repository.NewMatchRepository(DB)
 	request := repository.RequestMatch(requestMatch)
-	if request {
-		c.JSON(201, gin.H{"message": "success", "data": gin.H{"id": request, "createdAt": request}})
+	if request.StatusCode == 201 {
+		c.JSON(201, gin.H{"message": request.Message, "data": gin.H{"id": request.IdMatch, "createdAt": request.CreatedAt}})
 		return
 	} else {
-		c.JSON(500, gin.H{"message": "failed", "msg": "request match failed"})
+		c.JSON(request.StatusCode, gin.H{"message": "failed", "msg": request.Message})
 		return
 	}
 }

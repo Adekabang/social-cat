@@ -29,3 +29,10 @@ type MatchUri struct {
 type PostApproveReject struct {
 	MatchId string `json:"matchId"`
 }
+
+type CreateMatchResponse struct {
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message"`
+	IdMatch    string `json:"idMatch"`
+	CreatedAt  string `json:"createdAt"`
+}

@@ -5,7 +5,7 @@ import (
 )
 
 type MatchRepositoryInterface interface {
-	RequestMatch(model.RequestMatch) bool
+	RequestMatch(model.RequestMatch) model.CreateMatchResponse
 	GetMatchRequest(string) []model.GetMatch
 	ApproveMatch(string) bool
 	RejectMatch(string) bool
