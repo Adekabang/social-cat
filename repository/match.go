@@ -32,7 +32,7 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 
 	// check if issuerCatId is not belong issuer
 	var isValidIssuerCat int
-	err = m.Db.QueryRow("SELECT count(*) FROM cats WHERE ownerid = $1 OR id =$2", requestMatch.IssuedBy, requestMatch.UserCatId).Scan(&isValidIssuerCat)
+	err = m.Db.QueryRow("SELECT count(*) FROM cats WHERE ownerid = $1 and id =$2", requestMatch.IssuedBy, requestMatch.UserCatId).Scan(&isValidIssuerCat)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,11 +41,37 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 		return model.CreateMatchResponse{StatusCode: 404, Message: "User Cat ID is not belong to the Issuer"}
 	}
 
+	var userCatSex string
+	var matchCatSex string
+	var userCatMatchedStatus bool
+	var matchCatMatchedStatus bool
+	var userCatOwner string
+	var matchCatOwner string
 	// check if gender is the same
+	err = m.Db.QueryRow("SELECT sex, hasmatched, ownerid FROM cats WHERE ownerid = $1 AND id =$2", requestMatch.IssuedBy, requestMatch.UserCatId).Scan(&userCatSex, &userCatMatchedStatus, &userCatOwner)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = m.Db.QueryRow("SELECT sex, hasmatched, ownerid FROM cats WHERE id =$1", requestMatch.MatchCatId).Scan(&matchCatSex, &matchCatMatchedStatus, &matchCatOwner)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if userCatSex == matchCatSex {
+		return model.CreateMatchResponse{StatusCode: 400, Message: "Requested cats have same gender"}
+	}
 
 	// check issuerCatId and receiverCatId already matched
+	if userCatMatchedStatus {
+		return model.CreateMatchResponse{StatusCode: 400, Message: "Requested user cat already matched"}
+	}
+	if matchCatMatchedStatus {
+		return model.CreateMatchResponse{StatusCode: 400, Message: "Requested match cat already matched"}
+	}
 
 	// check issuerCatId and receiverCatId same owner
+	if userCatOwner == matchCatOwner {
+		return model.CreateMatchResponse{StatusCode: 400, Message: "Requested cats belong to the same owner"}
+	}
 
 	uuidMatch := uuid.New()
 
