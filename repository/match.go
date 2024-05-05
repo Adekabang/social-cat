@@ -24,7 +24,7 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 	var isValidCatId int
 	err := m.Db.QueryRow("SELECT COUNT(*) FROM cats WHERE id = $1 OR id =$2", requestMatch.MatchCatId, requestMatch.UserCatId).Scan(&isValidCatId)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if isValidCatId != 2 {
 		log.Println(isValidCatId)
@@ -35,7 +35,7 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 	var isValidIssuerCat int
 	err = m.Db.QueryRow("SELECT count(*) FROM cats WHERE ownerid = $1 and id =$2", requestMatch.IssuedBy, requestMatch.UserCatId).Scan(&isValidIssuerCat)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if isValidIssuerCat != 1 {
 		log.Println(isValidIssuerCat)
@@ -51,11 +51,11 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 	// check if gender is the same
 	err = m.Db.QueryRow("SELECT sex, hasmatched, ownerid FROM cats WHERE ownerid = $1 AND id =$2", requestMatch.IssuedBy, requestMatch.UserCatId).Scan(&userCatSex, &userCatMatchedStatus, &userCatOwner)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	err = m.Db.QueryRow("SELECT sex, hasmatched, ownerid FROM cats WHERE id =$1", requestMatch.MatchCatId).Scan(&matchCatSex, &matchCatMatchedStatus, &matchCatOwner)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if userCatSex == matchCatSex {
 		return model.CreateMatchResponse{StatusCode: 400, Message: "Requested cats have same gender"}
@@ -161,7 +161,7 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 			err = m.Db.QueryRow("SELECT name, email, created_at FROM users WHERE id = $1", issuedBy).Scan(&issuerName, &issuerEmail, &issuerCreatedAt)
 			if err != nil {
 				log.Println("get issuer")
-				log.Fatal(err)
+				log.Println(err)
 			}
 			issuerData := model.IssuedBy{Name: issuerName, Email: issuerEmail, CreatedAt: issuerCreatedAt}
 
@@ -170,14 +170,14 @@ func (m *MatchRepository) GetMatchRequest(userId string) []model.GetMatch {
 			err = m.Db.QueryRow("SELECT id, name, race, sex, ageinmonth, description, hasmatched, created_at, imageurls FROM cats WHERE id = $1", issuerCatId).Scan(&userCat.Id, &userCat.Name, &userCat.Race, &userCat.Sex, &userCat.AgeInMonth, &userCat.Description, &userCat.HasMatched, &userCat.CreatedAt, pq.Array(&userCat.ImageUrls))
 			if err != nil {
 				log.Println("get issuer cat")
-				log.Fatal(err)
+				log.Println(err)
 			}
 
 			// get data matchCatDetail by receiverCatId
 			err = m.Db.QueryRow("SELECT id, name, race, sex, ageinmonth, description, hasmatched, created_at, imageurls FROM cats WHERE id = $1", receiverCatId).Scan(&matchCat.Id, &matchCat.Name, &matchCat.Race, &matchCat.Sex, &matchCat.AgeInMonth, &matchCat.Description, &matchCat.HasMatched, &matchCat.CreatedAt, pq.Array(&matchCat.ImageUrls))
 			if err != nil {
 				log.Println("get match cat")
-				log.Fatal(err)
+				log.Println(err)
 			}
 
 			match := model.GetMatch{Id: id, IssuedBy: issuerData, Message: message, UserCatDetail: userCat, MatchCatDetail: matchCat, CreatedAt: createdAt}

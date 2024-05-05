@@ -248,13 +248,13 @@ func (m *CatRepository) UpdateCat(id string, post model.PostCat) int {
 
 	err := m.Db.QueryRow("SELECT COUNT(*) FROM matches WHERE receivercatid = $1 OR issuercatid = $1", id).Scan(&count)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if count >= 1 {
 		var sex string
 		err := m.Db.QueryRow("SELECT sex FROM cats WHERE id = $1", id).Scan(&sex)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		if sex != post.Sex {
 			return 400
@@ -294,13 +294,17 @@ func (m *CatRepository) DeleteCat(id string, userId string) bool {
 	var deleteStatus bool
 	err := m.Db.QueryRow("SELECT softdelete FROM cats WHERE id = $1", id).Scan(&deleteStatus)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if deleteStatus {
 		return false
 	}
 
 	update, err := m.Db.Exec("UPDATE cats SET softdelete = true WHERE id = $1 AND ownerid = $2", id, userId)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
 	num, _ := update.RowsAffected()
 	log.Println(num)
 	if num == 0 {
