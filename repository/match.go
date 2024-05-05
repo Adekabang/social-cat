@@ -31,6 +31,15 @@ func (m *MatchRepository) RequestMatch(requestMatch model.RequestMatch) model.Cr
 	}
 
 	// check if issuerCatId is not belong issuer
+	var isValidIssuerCat int
+	err = m.Db.QueryRow("SELECT count(*) FROM cats WHERE ownerid = $1 OR id =$2", requestMatch.IssuedBy, requestMatch.UserCatId).Scan(&isValidIssuerCat)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if isValidIssuerCat != 1 {
+		log.Println(isValidIssuerCat)
+		return model.CreateMatchResponse{StatusCode: 404, Message: "User Cat ID is not belong to the Issuer"}
+	}
 
 	// check if gender is the same
 
