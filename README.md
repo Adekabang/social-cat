@@ -36,24 +36,24 @@ migrate -database "postgres://postgres:password@127.0.0.1:5432/social_cat?sslmod
         - [x]  Request Format
         - [x]  Process
         - [x]  Response Format
-- [ ]  Match Cat
-    - [ ]  POST /v1/cat/match
-        - [ ]  Request Format
-        - [ ]  Process
-        - [ ]  Response Format
-    - [ ]  GET /v1/cat/match
-        - [ ]  Request Format
-        - [ ]  Process
-        - [ ]  Response Format
-    - [ ]  POST /v1/cat/match/approve
-        - [ ]  Request Format
-        - [ ]  Process
-        - [ ]  Response Format
-    - [ ]  POST /v1/cat/match/reject
-        - [ ]  Request Format
-        - [ ]  Process
-        - [ ]  Response Format
-    - [ ]  DELETE /v1/cat/match/{id}
-        - [ ]  Request Format
-        - [ ]  Process
-        - [ ]  Response Format
+- [x]  Match Cat
+    - [x]  POST /v1/cat/match
+        - [x]  Request Format
+        - [x]  Process
+        - [x]  Response Format
+    - [x]  GET /v1/cat/match
+        - [x]  Request Format
+        - [x]  Process
+        - [x]  Response Format
+    - [x]  POST /v1/cat/match/approve
+        - [x]  Request Format
+        - [x]  Process
+        - [x]  Response Format
+    - [x]  POST /v1/cat/match/reject
+        - [x]  Request Format
+        - [x]  Process
+        - [x]  Response Format
+    - [x]  DELETE /v1/cat/match/{id}
+        - [x]  Request Format
+        - [x]  Process
+        - [x]  Response Format
